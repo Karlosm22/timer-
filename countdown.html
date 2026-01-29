@@ -1,0 +1,133 @@
+
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cuenta regresiva</title>
+<style>
+  :root{
+    --bg:#0b172a;      /* Fondo */
+    --fg:#ffffff;      /* Texto principal */
+    --accent:#9fb3c8;  /* Texto secundario */
+    --size:5;          /* Tamaño en vw para el número principal */
+    --outline:0;       /* 1 para contorno del texto */
+  }
+  html,body{height:100%;}
+  body{
+    margin:0; height:100%; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); color:var(--fg); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
+  .container{ text-align:center; padding: 0 1rem; }
+  .clock{ font-size: calc(var(--size) * 1vw); line-height: 1.1; letter-spacing: 0.05em; }
+  .label{ margin-top: .5rem; font-size: calc(var(--size) * 0.24vw); color: var(--accent); }
+  .title{ margin-bottom: .75rem; font-size: calc(var(--size) * 0.28vw); color: var(--accent); }
+  @media (max-width: 768px){
+    .clock{ font-size: 14vw; }
+    .label{ font-size: 3.2vw; }
+    .title{ font-size: 3.6vw; }
+  }
+  .outline{ text-shadow: 0 0 2px #000, 0 0 8px rgba(0,0,0,.45); }
+  .ended{ color: #ffcc00; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div id="title" class="title"></div>
+    <div id="clock" class="clock" role="text" aria-live="polite">--:--:--:--</div>
+    <div id="label" class="label">DD:HH:MM:SS</div>
+    <div class="sr-only" id="sr"></div>
+  </div>
+<script>
+(function(){
+  const qs = new URLSearchParams(location.search);
+
+  // Parámetros configurables
+  const targetParam = qs.get('t');              // fecha objetivo; ISO 8601 (recomendado) o epoch (ms/s)
+  const title      = qs.get('title') || '';
+  const endText    = qs.get('endText') || '¡Evento en curso!';
+  const labelText  = qs.get('label') || 'DD:HH:MM:SS';
+  const bg         = qs.get('bg');
+  const fg         = qs.get('fg');
+  const accent     = qs.get('accent');
+  const size       = qs.get('size'); // número, en vw
+  const outline    = qs.get('outline'); // '1' para activar
+
+  // Aplica estilos por parámetros
+  if(bg) document.documentElement.style.setProperty('--bg', bg);
+  if(fg) document.documentElement.style.setProperty('--fg', fg);
+  if(accent) document.documentElement.style.setProperty('--accent', accent);
+  if(size && !isNaN(parseFloat(size))) document.documentElement.style.setProperty('--size', parseFloat(size));
+  if(outline === '1') document.documentElement.style.setProperty('--outline', 1);
+
+  const clockEl = document.getElementById('clock');
+  const labelEl = document.getElementById('label');
+  const titleEl = document.getElementById('title');
+  const srEl    = document.getElementById('sr');
+
+  if(title) titleEl.textContent = title;
+  labelEl.textContent = labelText;
+
+  // Parseo robusto de fecha objetivo
+  function parseTarget(t){
+    if(!t) return null;
+    // Epoch en ms o s
+    if(/^\d{13}$/.test(t)) return parseInt(t,10);
+    if(/^\d{10}$/.test(t)) return parseInt(t,10) * 1000;
+    // ISO 8601 u otras cadenas que Date.parse entienda (incluye zona si se proporciona -05:00 o Z)
+    const ms = Date.parse(t);
+    return isNaN(ms) ? null : ms;
+  }
+
+  let targetMs = parseTarget(targetParam);
+  if(targetMs === null){
+    // Por defecto: +1 hora desde ahora si no se define t
+    targetMs = Date.now() + 3600*1000;
+  }
+
+  function pad2(n){ return (n < 10 ? '0' : '') + n; }
+
+  function formatDHMS(totalSeconds){
+    let s = Math.max(0, Math.floor(totalSeconds));
+    const d = Math.floor(s / 86400); s %= 86400;
+    const h = Math.floor(s / 3600); s %= 3600;
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return {d,h,m,sec, text: `${pad2(d)}:${pad2(h)}:${pad2(m)}:${pad2(sec)}`};
+  }
+
+  function update(){
+    const now = Date.now();
+    const diffSec = Math.floor((targetMs - now)/1000);
+    const {d,h,m,sec,text} = formatDHMS(diffSec);
+
+    clockEl.textContent = text;
+    if(getComputedStyle(document.documentElement).getPropertyValue('--outline').trim() === '1'){
+      clockEl.classList.add('outline');
+    }
+
+    // Texto accesible para lectores de pantalla
+    srEl.textContent = (diffSec > 0)
+      ? `Quedan ${d} días, ${h} horas, ${m} minutos y ${sec} segundos.`
+      : endText;
+
+    if(diffSec <= 0){
+      clockEl.classList.add('ended');
+      labelEl.textContent = endText;
+      clockEl.textContent = '00:00:00:00';
+      return; // detiene al llegar a cero
+    }
+
+    // Programa el siguiente tick alineado al segundo
+    const delay = 1000 - (now % 1000) + 5; // +5ms de margen
+    setTimeout(update, delay);
+  }
+
+  // Primera actualización alineada
+  const firstDelay = 1000 - (Date.now() % 1000) + 5;
+  setTimeout(update, firstDelay);
+})();
+</script>
+</body>
+</html>
