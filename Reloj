@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Reloj LED</title>
+
+<style>
+body {
+  margin: 0;
+  background: #072f5f;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Fuente */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+
+.countdown {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+}
+
+/* Contenedor de cada bloque */
+.block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Números */
+.number {
+  font-family: 'Orbitron', monospace;
+  font-size: 6vw;
+  color: #00ff00;
+  background: #000;
+  padding: 1vw 2vw;
+  border-radius: 8px;
+  min-width: 8vw;
+  text-align: center;
+  box-shadow:
+    0 0 5px #00ff00,
+    0 0 10px #00ff00,
+    inset 0 0 8px #00ff00;
+}
+
+/* Texto inferior */
+.label {
+  color: #00ff00;
+  font-size: 1.2vw;
+  margin-top: 6px;
+  font-family: Arial, sans-serif;
+}
+
+/* Separador */
+.separator {
+  font-family: 'Orbitron', monospace;
+  font-size: 6vw;
+  color: #00ff00;
+  text-shadow: 0 0 10px #00ff00;
+  animation: blink 1s infinite;
+}
+
+/* Parpadeo */
+@keyframes blink {
+  0%, 50%, 100% {opacity: 1;}
+  25%, 75% {opacity: 0;}
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .number, .separator {
+    font-size: 10vw;
+  }
+
+  .label {
+    font-size: 3vw;
+  }
+}
+</style>
+
+</head>
+<body>
+
+<div class="countdown">
+
+  <div class="block">
+    <div class="number" id="days">00</div>
+    <div class="label">DIAS</div>
+  </div>
+
+  <div class="separator">:</div>
+
+  <div class="block">
+    <div class="number" id="hours">00</div>
+    <div class="label">HORAS</div>
+  </div>
+
+  <div class="separator">:</div>
+
+  <div class="block">
+    <div class="number" id="minutes">00</div>
+    <div class="label">MIN.</div>
+  </div>
+
+  <div class="separator">:</div>
+
+  <div class="block">
+    <div class="number" id="seconds">00</div>
+    <div class="label">SEG.</div>
+  </div>
+
+</div>
+
+<script>
+// ✅ Fecha: 31 de mayo (ajuste automático de año actual)
+const now = new Date();
+const year = now.getFullYear();
+const targetDate = new Date(`${year}-05-31T23:59:59`).getTime();
+
+// Si ya pasó este año, usa el siguiente
+if (new Date().getTime() > targetDate) {
+  targetDate = new Date(`${year + 1}-05-31T23:59:59`).getTime();
+}
+
+// efecto flash en segundos
+function flash(el){
+  el.style.opacity = "0.4";
+  setTimeout(() => el.style.opacity = "1", 150);
+}
+
+function updateCountdown() {
+  const now = new Date().getTime();
+  const diff = targetDate - now;
+
+  if (diff <= 0) return;
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((diff / 1000 / 60) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
+
+  const d = document.getElementById("days");
+  const h = document.getElementById("hours");
+  const m = document.getElementById("minutes");
+  const s = document.getElementById("seconds");
+
+  d.innerText = String(days).padStart(2, "0");
+  h.innerText = String(hours).padStart(2, "0");
+  m.innerText = String(minutes).padStart(2, "0");
+  s.innerText = String(seconds).padStart(2, "0");
+
+  flash(s);
+}
+
+setInterval(updateCountdown, 1000);
+updateCountdown();
+</script>
+
+</body>
+</html>
