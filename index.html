@@ -118,7 +118,7 @@ body {
 // ✅ Fecha: 31 de mayo (ajuste automático de año actual)
 const now = new Date();
 const year = now.getFullYear();
-const targetDate = new Date(`${year}-05-31T23:59:59`).getTime();
+const targetDate = new Date(`${year}-05-31T08:00:00`).getTime();
 
 // Si ya pasó este año, usa el siguiente
 if (new Date().getTime() > targetDate) {
